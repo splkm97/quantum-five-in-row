@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: quantum-five-in-row
+  name: quantum-five-in-row-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quantum-five-in-row
+  template:
+    metadata:
+      labels:
+        app: quantum-five-in-row
+    spec:
+      containers:
+        - image: docker.io/splkm97/quantum-five-in-row:test-01
+          name: quantum-five-in-row-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantum-five-in-row
+spec:
+  selector:
+    app: quantum-five-in-row
+  ports:
+    - port: 3000
+      protocol: TCP
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: quantum-five-in-row
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - "quantum-five-in-row.kalee-k8s.com"
+      port:
+        name: http
+        number: 80
+        protocol: HTTP
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: quantum-five-in-row-server
+spec:
+  hosts:
+    - quantum-five-in-row.kalee-k8s.com
+  gateways:
+    - quantum-five-in-row
+  http:
+    - route:
+        - destination:
+            host: quantum-five-in-row
+            port:
+              number: 3000
+
