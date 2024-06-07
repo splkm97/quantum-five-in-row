@@ -33,6 +33,8 @@ const getStoneTxt = (stoneType: number): string => {
         return "10";
     } else if (stoneType === -3) {
         return "30";
+    } else if (stoneType === 0) {
+        return "";
     }
     return "error";
 }
