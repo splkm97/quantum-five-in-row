@@ -10,26 +10,96 @@ export const GameBoard: React.FC = () => {
     const [stones, setStones] = useState<Array<StoneProps>>(Array(400).fill(null));
     const [observedStones, setObservedStones] = useState<Array<StoneProps>>(Array(400).fill(null));
     const [isObserved, setIsObserved] = useState<boolean>(false);
-    const newGameClicked = () => {
+    useEffect(() => {
+        const fetchStones = async () => {
+            // TODO: mygame 퇴출 필요..
+            axios.get(`${baseURL}/api/game/mygame/board`)
+                .then((resp) => {
+                    const newStones: Array<StoneProps> = []
+                    resp.data.forEach((curLine: Array<number>, yIdx: number) => {
+                        curLine.forEach((curStone: number, xIdx: number) => {
+                            if (curStone >= 0.8) {
+                                newStones.push({
+                                    stoneType: 2
+                                })
+                            } else if (curStone >= 0.5 && curStone < 0.8) {
+                                newStones.push({
+                                    stoneType: 3
+                                })
+                            } else if (curStone >= 0.2 && curStone < 0.5) {
+                                newStones.push({
+                                    stoneType: -3
+                                })
+                            } else if (curStone > 0 && curStone < 0.2) {
+                                newStones.push({
+                                    stoneType: -2
+                                })
+                            } else {
+                                newStones.push({
+                                    stoneType: 0
+                                })
+                            }
+                        })
+                    })
+                    setStones(newStones)
+                })
+                .catch((error) => {
+                    console.log(error)
+                });
+        }
+        fetchStones();
+
+        const intervalId = setInterval(() => {
+            if (!isObserved) {
+                fetchStones();
+            }
+        }, 3000);
+
+        return () => clearInterval(intervalId);
+    }, [setStones]);
+
+    const newGameClicked = useCallback(() => {
+        // TODO: mygame 퇴출 필요..
         axios.post(`${baseURL}/api/game/mygame`, {
-            "x_size": '20',
-            "y_size": '20'
+            x_size: 20,
+            y_size: 20
         })
             .then((resp) => {
                 const newStones: Array<StoneProps> = []
-                resp.data.forEach((curLine: Array<number>, yIdx: number) => {
+                resp.data.play_data.forEach((curLine: Array<number>, yIdx: number) => {
                     curLine.forEach((curStone: number, xIdx: number) => {
-                        newStones.push({
-                            stoneType: 0,
-                        })
+                        if (curStone >= 0.8) {
+                            newStones.push({
+                                stoneType: 2
+                            })
+                        } else if (curStone >= 0.5 && curStone < 0.8) {
+                            newStones.push({
+                                stoneType: 3
+                            })
+                        } else if (curStone >= 0.2 && curStone < 0.5) {
+                            newStones.push({
+                                stoneType: -3
+                            })
+                        } else if (curStone > 0 && curStone < 0.2) {
+                            newStones.push({
+                                stoneType: -2
+                            })
+                        } else {
+                            newStones.push({
+                                stoneType: 0
+                            })
+                        }
                     })
                 })
                 setStones(newStones)
+                if (isObserved) {
+                    setIsObserved(false);
+                }
             })
             .catch((error) => {
                 console.log(error)
             })
-    }
+    }, [isObserved, setIsObserved]);
 
     const observeClicked = () => {
         if (!isObserved) {
