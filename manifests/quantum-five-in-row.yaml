@@ -2,61 +2,114 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: quantum-five-in-row
-  name: quantum-five-in-row-server
+    app: quantum-five-in-row-be
+  name: quantum-five-in-row-be-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: quantum-five-in-row
+      app: quantum-five-in-row-be
   template:
     metadata:
       labels:
-        app: quantum-five-in-row
+        app: quantum-five-in-row-be
     spec:
       containers:
-        - image: docker.io/splkm97/quantum-five-in-row:test-01
-          name: quantum-five-in-row-server
+        - image: docker.io/splkm97/quantum-five-in-row:be-01
+          name: quantum-five-in-row-be-server
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: quantum-five-in-row
+  name: quantum-five-in-row-be
 spec:
   selector:
-    app: quantum-five-in-row
+    app: quantum-five-in-row-be
+  ports:
+    - port: 8080
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: quantum-five-in-row-fe
+  name: quantum-five-in-row-fe-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quantum-five-in-row-fe
+  template:
+    metadata:
+      labels:
+        app: quantum-five-in-row-fe
+    spec:
+      containers:
+        - image: docker.io/splkm97/quantum-five-in-row:fe-04
+          name: quantum-five-in-row-fe-server
+          volumeMounts:
+            - mountPath: /workspace/.env
+              name: quantum-fe-config
+              readOnly: true
+              subPath: .env
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: quantum-fe-config
+          name: quantum-fe-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: quantum-fe-config
+data:
+  .env: |
+    REACT_APP_BASE_URL='http://api.be.testbed.inno.com'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantum-five-in-row-fe
+spec:
+  selector:
+    app: quantum-five-in-row-fe
   ports:
     - port: 3000
       protocol: TCP
 ---
-apiVersion: networking.istio.io/v1beta1
-kind: Gateway
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: quantum-five-in-row
+  name: quantum-five-in-row-be-ingress
 spec:
-  selector:
-    istio: ingressgateway
-  servers:
-    - hosts:
-        - "quantum-five-in-row.kalee-k8s.com"
-      port:
-        name: http
-        number: 80
-        protocol: HTTP
+  ingressClassName: nginx
+  rules:
+    - host: api.qfir.testbed.inno.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: quantum-five-in-row-be
+                port:
+                  number: 8080
+            path: /
+            pathType: Prefix
 ---
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: quantum-five-in-row-server
+  name: quantum-five-in-row-fe-ingress
 spec:
-  hosts:
-    - quantum-five-in-row.kalee-k8s.com
-  gateways:
-    - quantum-five-in-row
-  http:
-    - route:
-        - destination:
-            host: quantum-five-in-row
-            port:
-              number: 3000
-
+  ingressClassName: nginx
+  rules:
+    - host: qfir.testbed.inno.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: quantum-five-in-row-fe
+                port:
+                  number: 3000
+            path: /
+            pathType: Prefix
