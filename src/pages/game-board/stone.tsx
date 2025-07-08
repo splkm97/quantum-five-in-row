@@ -6,17 +6,17 @@ export type StoneProps = {
 
 const getClassName = (stoneType: number): string => {
     if (stoneType === 1) {
-        return "black";
+        return "text-white bg-black";
     } else if (stoneType === -1) {
-        return "white";
+        return "text-black bg-white";
     } else if (stoneType === 2) {
-        return "black-90";
+        return "text-white bg-[#222]";
     } else if (stoneType === 3) {
-        return "black-70";
+        return "text-white bg-[#444]";
     } else if (stoneType === -2) {
-        return "white-90";
+        return "text-black bg-[#ddd]";
     } else if (stoneType === -3) {
-        return "white-70";
+        return "text-black bg-[#bbb]";
     }
     return "empty"
 }
@@ -43,7 +43,10 @@ export const Stone: React.FC<StoneProps> = (stoneProps) => {
     const stoneClassName = getClassName(stoneProps.stoneType)
     const stoneTxt = getStoneTxt(stoneProps.stoneType)
 
+    // Tailwind classes for .go-stone
+    const baseStoneClasses = "flex justify-center items-center w-6 h-6 rounded-full absolute text-sm top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2";
+
     return (
-        <div className={`go-stone ${stoneClassName}`}>{stoneTxt}</div>
+        <div className={`${baseStoneClasses} ${stoneClassName}`}>{stoneTxt}</div>
     )
 }
